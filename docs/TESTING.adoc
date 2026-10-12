@@ -31,6 +31,9 @@ closing the gaps.
   `src/teamsBot.test.ts` pins that the chat is opened after the receipt;
   `src/services/fetchUserMiddleware.proactive.test.ts` pins that the
   synthetic proactive event skips the Teams and LNbits lookups.
+- The `TeamsBot free text in a 1:1 chat` block in `src/teamsBot.test.ts` pins
+  that unmatched 1:1 text gets the command guide, never the assistant or an
+  error, unless both `FOUNDRY_PROJECT_ENDPOINT` and `FOUNDRY_MODEL` are set.
 - `src/services/lnbitsService.test.ts` mocks `fetch` and exercises the real
   service logic for wallet, invoice, and payment calls.
 - `src/services/paymentExtra.test.ts` and the `SendZap payment metadata` block

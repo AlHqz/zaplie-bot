@@ -17,6 +17,7 @@ import { TurnContext } from 'botbuilder';
 import { GENERIC_ERROR_MESSAGE } from './messages';
 import { SSOCommand, SSOCommandMap } from './commands/SSOCommandMap';
 import { pulseSettled, resetPulseForTests } from './services/pulse';
+import { runConversationalTurn } from './services/foundryAgentService';
 import {
   createInvoice,
   getUser,
@@ -43,6 +44,10 @@ process.env.ZAPLIE_DATA_DIR = path.join(
 );
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { TeamsBot } = require('./teamsBot') as typeof import('./teamsBot');
+// Required after the env above for the same reason; tests switch the assistant
+// on and off through it.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const config = (require('./config') as typeof import('./config')).default;
 
 type MockContext = {
   context: TurnContext;
@@ -316,6 +321,62 @@ describe('TeamsBot command matching', () => {
     expect(guide).toContain('send zap');
     expect(guide).toContain('show my balance');
     expect(guide).toContain('show leaderboard');
+  });
+});
+
+describe('TeamsBot free text in a 1:1 chat', () => {
+  const saved = {
+    endpoint: config.foundryProjectEndpoint,
+    model: config.foundryModel,
+  };
+
+  afterEach(() => {
+    config.foundryProjectEndpoint = saved.endpoint;
+    config.foundryModel = saved.model;
+    jest.restoreAllMocks();
+  });
+
+  test.each([
+    ['neither is set', undefined, undefined],
+    ['only the endpoint is set', 'https://foundry.example', undefined],
+    ['only the model is set', undefined, 'model-1'],
+  ])(
+    'lists the commands instead of failing when the assistant is not configured (%s)',
+    async (_case, endpoint, model) => {
+      config.foundryProjectEndpoint = endpoint;
+      config.foundryModel = model;
+      const consoleError = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined);
+      const bot = new TeamsBot();
+      const { context, sendActivity } = makeContext({ text: 'Hi Zaplie!' });
+
+      await bot.run(context);
+
+      expect(runConversationalTurn).not.toHaveBeenCalled();
+      expect(sendActivity).toHaveBeenCalledTimes(1);
+      const [guide] = sendActivity.mock.calls[0] as unknown as [string];
+      expect(guide).not.toBe(GENERIC_ERROR_MESSAGE);
+      expect(guide).toContain('send zap');
+      expect(guide).toContain('show my balance');
+      expect(consoleError).not.toHaveBeenCalled();
+    },
+  );
+
+  test('hands free text to the assistant when it is configured', async () => {
+    config.foundryProjectEndpoint = 'https://foundry.example';
+    config.foundryModel = 'model-1';
+    jest.mocked(runConversationalTurn).mockResolvedValueOnce({
+      replyText: 'Hello from the assistant',
+      foundryConversationId: 'foundry-conv-1',
+    });
+    const bot = new TeamsBot();
+    const { context, sendActivity } = makeContext({ text: 'Hi Zaplie!' });
+
+    await bot.run(context);
+
+    expect(runConversationalTurn).toHaveBeenCalledTimes(1);
+    expect(sendActivity).toHaveBeenCalledWith('Hello from the assistant');
   });
 });
 

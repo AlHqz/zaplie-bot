@@ -313,6 +313,13 @@ created. Must be a positive integer; a failed grant is logged, not retried
   only. Anonymous meeting participants are never served
 | Bot
 
+| `FOUNDRY_PROJECT_ENDPOINT`, `FOUNDRY_MODEL`
+| Azure AI Foundry project endpoint and model for the conversational
+  assistant. Free text that matches no command in a 1:1 chat goes to the
+  assistant only when both are set; otherwise the bot replies with the list
+  of commands, as it does in group chats and channels
+| Bot
+
 | `SCM_DO_BUILD_DURING_DEPLOYMENT`
 | Must be `false`: CI ships a prebuilt artifact and Oryx must not rebuild it
 | Portal (App Service setting)

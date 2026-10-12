@@ -40,6 +40,7 @@ import {
   welcomeMessage,
 } from './messages';
 import { runConversationalTurn } from './services/foundryAgentService';
+import config from './config';
 import { createReadOnlyTools } from './commands/agentTools';
 import { getUser, getWalletBalance } from './services/lnbitsService';
 import {
@@ -51,6 +52,11 @@ import {
 const UNRECOGNIZED_COMMAND_MESSAGE =
   "D'oh! I'm sorry, but I didn't recognize that command. But don't worry, I'm always getting better!";
 const ZAP_SUBMIT_ACTION = 'submitZaps';
+
+// The conversational assistant needs a Foundry project and model. Without
+// them, free text gets the command list instead of an error.
+const assistantConfigured = (): boolean =>
+  Boolean(config.foundryProjectEndpoint && config.foundryModel);
 
 // The Teams message id is the upstream id of a reply; a synthetic activity
 // without one falls back to its conversation, which is still stable.
@@ -391,13 +397,15 @@ export class TeamsBot extends TeamsActivityHandler {
               upstreamId: upstreamIdOf(context),
             });
           } else if (
-            context.activity.conversation.conversationType === 'personal'
+            context.activity.conversation.conversationType === 'personal' &&
+            assistantConfigured()
           ) {
             // Free text with no command match falls back to the
             // conversational agent, but only in 1:1 chats: ConversationState
             // (and therefore the Foundry conversation) is keyed per
             // conversation, so a team or groupchat would otherwise share one
-            // agent thread across unrelated teammates.
+            // agent thread across unrelated teammates. A deployment without
+            // the assistant gets the command guide below instead.
             await this.replyConversationally(context, textMessage);
             recordActivity({
               activityType: 'chat.answered',
