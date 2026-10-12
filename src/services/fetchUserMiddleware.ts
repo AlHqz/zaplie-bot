@@ -1,5 +1,6 @@
 import { TurnContext, TeamsInfo } from 'botbuilder';
 import { UserService } from './userService';
+import { memberVerdict } from './memberGate';
 
 export class FetchUserMiddleware {
   private userService: UserService;
@@ -25,10 +26,26 @@ export class FetchUserMiddleware {
     // Check if user is already stored in the turn state (for the current turn)
     if (!context.turnState.get('user')) {
       console.log("User not found in turn state. Fetching user's info ...");
-      const member = await TeamsInfo.getMember(
-        context,
-        context.activity.from.id,
-      );
+      let member;
+      try {
+        member = await TeamsInfo.getMember(context, context.activity.from.id);
+      } catch (error) {
+        // Nobody we can name is nobody we serve. Ending the turn quietly here
+        // keeps onTurnError from apologising to someone outside the org.
+        console.warn(
+          'Ignoring a turn whose sender Teams would not resolve:',
+          error instanceof Error ? error.message : String(error),
+        );
+        return;
+      }
+
+      // Members of this bot's own tenant only: no LNbits account, no reply
+      // and no error message for a guest or anyone else (see memberGate.ts).
+      const verdict = memberVerdict(member);
+      if (verdict.allowed === false) {
+        console.info(`Ignoring a turn from a non-member (${verdict.reason}).`);
+        return;
+      }
 
       const userService = UserService.getInstance();
       const user = await userService.ensureUserSetup(member);

@@ -49,7 +49,15 @@ describe('FetchUserMiddleware on a proactive turn', () => {
   });
 
   test('a message still resolves the sender into the turn state', async () => {
-    const member = { id: '29:alice', aadObjectId: 'aad-alice', name: 'Alice' };
+    process.env.AAD_APP_TENANT_ID = 'tenant-1';
+    // What Teams returns for a member of the bot's own tenant.
+    const member = {
+      id: '29:alice',
+      aadObjectId: 'aad-alice',
+      name: 'Alice',
+      userRole: 'user',
+      tenantId: 'tenant-1',
+    };
     const user = { id: 'alice', aadObjectId: 'aad-alice' };
     const getMember = jest
       .spyOn(TeamsInfo, 'getMember')

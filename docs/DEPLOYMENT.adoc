@@ -303,6 +303,13 @@ created. Must be a positive integer; a failed grant is logged, not retried
   its `agentId` parameter
 | Bot
 
+| `ZAPLIE_GUEST_ALLOWLIST`
+| Guests (or users from other tenants) the bot may serve, besides members of
+  its own tenant. Comma-separated: `person@example.com`, `@example.com` for a
+  whole domain, or an Entra object id. Empty or unset (the default): members
+  only. Anonymous meeting participants are never served
+| Bot
+
 | `SCM_DO_BUILD_DURING_DEPLOYMENT`
 | Must be `false`: CI ships a prebuilt artifact and Oryx must not rebuild it
 | Portal (App Service setting)
@@ -403,8 +410,34 @@ Complete these once per new environment, right after the first deployment:
   compromised. Rotate both in LNbits and update the server-side app settings
   (`LNBITS_PASSWORD`, `LNBITS_ADMINKEY`) — never reuse the old values.
 . *Provisioning caveat.* A user's LNbits wallets are provisioned the first
-  time the bot sees them: each user must send the bot one message (any
-  message) before opening the tab, or the tab cannot resolve their wallet.
+  time the bot sees them (the Teams install event or their first message),
+  so the tab cannot resolve a wallet for someone the bot has never seen.
+  Only *members* of the bot's own tenant (`userRole` `user`, `tenantId` =
+  `AAD_APP_TENANT_ID`) and guests listed in `ZAPLIE_GUEST_ALLOWLIST` are
+  provisioned or answered. Anyone else (an unlisted guest, an anonymous
+  meeting participant, an unlisted user from another tenant, or a sender
+  Teams cannot resolve) gets no LNbits account, no reply and no error
+  message (`src/services/memberGate.ts`).
+. *Who can use the Teams app (Teams admin centre, Manage apps, Zaplie).*
+  *Availability* decides who can use it, *Installs* who gets it without
+  asking. "Everyone" includes the tenant's guests. External-access users
+  (other organisations) can reach the bot only in supported group chats or
+  meetings where the app is installed, and stay subject to
+  `ZAPLIE_GUEST_ALLOWLIST`.
+  Changing installs alone does not remove existing installs; availability
+  is what blocks the app.
+  ** *Members only (the default):* set both *Availability* and *Installs* to
+     specific users or groups. Guests cannot use the app at all with that
+     availability, even if they are assigned to it.
+  ** *Members and some guests:* availability has to be *Everyone*, because
+     no narrower setting reaches guests. The bot's allowlist is then the
+     gate: add the guest's email, `@their-domain` or Entra object id to
+     `ZAPLIE_GUEST_ALLOWLIST` on the bot's App Service and restart it.
+     Guests not on the list can see the app but get no account and no reply.
+     Keep *Installs* to the people who should get it automatically.
+. *When an account is created.* A member or allowlisted guest is provisioned
+  on the first turn the bot sees from them, which can be the Teams install
+  event itself, not only their first message.
 
 == Manifest and App Package
 
