@@ -378,6 +378,24 @@ describe('TeamsBot free text in a 1:1 chat', () => {
     expect(runConversationalTurn).toHaveBeenCalledTimes(1);
     expect(sendActivity).toHaveBeenCalledWith('Hello from the assistant');
   });
+
+  test.each([
+    ['Hi Zaplie!', "Hi! I'm Zaplie."],
+    ['what can you do?', "D'oh! I didn't recognize that command."],
+  ])(
+    'without the assistant, %j gets the guide that starts %j',
+    async (text, opening) => {
+      config.foundryProjectEndpoint = undefined;
+      config.foundryModel = undefined;
+      const bot = new TeamsBot();
+      const { context, sendActivity } = makeContext({ text });
+
+      await bot.run(context);
+
+      const [guide] = sendActivity.mock.calls[0] as unknown as [string];
+      expect(guide.startsWith(opening)).toBe(true);
+    },
+  );
 });
 
 describe('TeamsBot welcome message', () => {

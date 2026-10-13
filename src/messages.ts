@@ -11,21 +11,35 @@ export const GENERIC_ERROR_MESSAGE =
 // GENERIC_ERROR_MESSAGE.
 export class UserFacingError extends Error {}
 
+// The blank line after the list ends it: with a single newline, Teams
+// renders the closing sentence as part of the last bullet.
 const commandBullets = (commandNames: string[]): string =>
-  commandNames.map(name => `- **${name}**`).join('\n');
+  `${commandNames.map(name => `- **${name}**`).join('\n')}\n\n`;
 
 // Channel fallback when a message matches no command: keep the D'oh tone,
 // but tell people what the bot actually understands.
 export const unrecognizedCommandGuide = (commandNames: string[]): string =>
   "D'oh! I didn't recognize that command. Here's what I can help with:\n" +
-  `${commandBullets(commandNames)}\n` +
+  commandBullets(commandNames) +
+  'Just type one of those to get started!';
+
+// "Hi", "Hello Zaplie!", "good morning": a greeting, not a failed command.
+const GREETING =
+  /^(hi|hello|hey|hiya|howdy|morning|good (morning|afternoon|evening))( there)?( zaplie)?[\s!.,👋]*$/iu;
+
+export const isGreeting = (text: string): boolean => GREETING.test(text.trim());
+
+// The fallback for a greeting: say hello back, then the same commands.
+export const greetingGuide = (commandNames: string[]): string =>
+  "Hi! I'm Zaplie. Here's what I can help with:\n" +
+  commandBullets(commandNames) +
   'Just type one of those to get started!';
 
 // Sent once when the bot is installed or added to a conversation.
 export const welcomeMessage = (commandNames: string[]): string =>
   "Hi, I'm Zaplie! I help you send zaps to your colleagues. " +
   'Here are the commands I understand:\n' +
-  `${commandBullets(commandNames)}\n` +
+  commandBullets(commandNames) +
   'Type one of those to get started!';
 
 // The recipient sees the sender's words as one line of at most this many

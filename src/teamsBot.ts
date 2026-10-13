@@ -36,6 +36,8 @@ import {
 import {
   GENERIC_ERROR_MESSAGE,
   UserFacingError,
+  greetingGuide,
+  isGreeting,
   unrecognizedCommandGuide,
   welcomeMessage,
 } from './messages';
@@ -416,8 +418,11 @@ export class TeamsBot extends TeamsActivityHandler {
               upstreamId: upstreamIdOf(context),
             });
           } else {
+            const commandNames = SSOCommandMap.commandNames();
             await context.sendActivity(
-              unrecognizedCommandGuide(SSOCommandMap.commandNames()),
+              isGreeting(textMessage)
+                ? greetingGuide(commandNames)
+                : unrecognizedCommandGuide(commandNames),
             );
             recordActivity({
               activityType: 'chat.answered',
