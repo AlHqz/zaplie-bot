@@ -376,6 +376,11 @@ describe('TeamsBot free text in a 1:1 chat', () => {
     await bot.run(context);
 
     expect(runConversationalTurn).toHaveBeenCalledTimes(1);
+    // The assistant is told the bot's real commands, so it can point people
+    // to "send zap" instead of inventing a way to zap.
+    const commandNames = jest.mocked(runConversationalTurn).mock.calls[0][4];
+    expect(commandNames).toEqual(SSOCommandMap.commandNames());
+    expect(commandNames).toContain('send zap');
     expect(sendActivity).toHaveBeenCalledWith('Hello from the assistant');
   });
 

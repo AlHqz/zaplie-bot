@@ -10,6 +10,7 @@ import {
   MessageFactory,
 } from 'botbuilder';
 import { SSOCommandMap } from './commands/SSOCommandMap';
+import { SEND_ZAP_COMMAND } from './commands/commandNames';
 import {
   SendZapCommand,
   SendZap,
@@ -97,7 +98,7 @@ export class TeamsBot extends TeamsActivityHandler {
     >('foundryConversationId');
 
     // Register commands
-    SSOCommandMap.register('send zap', new SendZapCommand());
+    SSOCommandMap.register(SEND_ZAP_COMMAND, new SendZapCommand());
     SSOCommandMap.register('show my balance', new ShowMyBalanceCommand());
     // "withdraw my zaps" is deliberately not registered (or listed in the
     // app manifests) until withdrawals actually work — see issue #293. The
@@ -498,6 +499,7 @@ export class TeamsBot extends TeamsActivityHandler {
         existingConversationId,
         createReadOnlyTools(),
         context,
+        SSOCommandMap.commandNames(),
       );
       await this.foundryConversationIdAccessor.set(
         context,
