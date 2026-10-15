@@ -290,6 +290,16 @@ describe('foundryAgentService.runConversationalTurn', () => {
     // withdrawing reaches the agent — so the rails say so rather than letting
     // it improvise a payout route.
     expect(instructions).toContain('withdrawals are not available yet');
+    // It speaks as Zaplie itself, not as a helper beside the tool.
+    expect(instructions).toMatch(/^You are Zaplie, a bot in Microsoft Teams\./);
+    expect(instructions).not.toContain("Zaplie's assistant");
+    // A stated scope, so the model doesn't answer one Bitcoin question and
+    // refuse the next: general Bitcoin/Lightning questions yes, advice no.
+    expect(instructions).toContain('what is a Lightning channel?');
+    expect(instructions).toContain(
+      'Do not give investment, price, trading or tax advice',
+    );
+    expect(instructions).toContain('Politely decline questions unrelated');
   });
 
   test('tells the agent the real commands and that zapping is "send zap"', async () => {
