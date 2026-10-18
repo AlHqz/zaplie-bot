@@ -27,7 +27,11 @@ const ReceivePayment: React.FC<ReceivePopupProps> = ({
   const [isSuccessFailurePopupVisible, setIsSuccessFailurePopupVisible] =
     useState(false);
   const [isCreatingInvoice, setIsCreatingInvoice] = useState(false);
-  const isSendDisabled = !inputValue || !inputNotes || isCreatingInvoice;
+  const isSendDisabled =
+    !inputValue ||
+    !inputNotes ||
+    isCreatingInvoice ||
+    isSuccessFailurePopupVisible;
   const myLNbitDetails = currentUserLNbitDetails;
   const [invoice, setInvoice] = useState('');
   const [invoiceError, setInvoiceError] = useState('');
@@ -56,7 +60,7 @@ const ReceivePayment: React.FC<ReceivePopupProps> = ({
   };
 
   const handleNextClick = () => {
-    if (invoicePending.current) {
+    if (invoicePending.current || isSuccessFailurePopupVisible) {
       return;
     }
     setIsSuccessFailurePopupVisible(true);

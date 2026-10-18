@@ -160,6 +160,29 @@ describe('ReceivePayment polling lifecycle', () => {
     expect(mockGetWalletPayments).not.toHaveBeenCalled();
   });
 
+  test('disables Next after opening the invoice dialog', async () => {
+    mockCreateInvoice.mockReturnValue(new Promise(() => {}));
+
+    // Raw createRoot requires render work to be wrapped in act.
+    // eslint-disable-next-line testing-library/no-unnecessary-act
+    await act(async () => {
+      root.render(
+        <ReceivePayment
+          onClose={() => {}}
+          currentUserLNbitDetails={currentUser}
+        />,
+      );
+    });
+    await enterInvoiceDetails();
+
+    const nextButton = Array.from(container.querySelectorAll('button')).find(
+      button => button.textContent === 'Next',
+    );
+    expect(nextButton).toBeDefined();
+    expect(nextButton).toHaveProperty('disabled', true);
+    expect(mockCreateInvoice).toHaveBeenCalledTimes(1);
+  });
+
   test('does not overlap payment checks when a request is still pending', async () => {
     let resolvePayments!: (payments: Transaction[]) => void;
     mockCreateInvoice.mockResolvedValue('invoice');
