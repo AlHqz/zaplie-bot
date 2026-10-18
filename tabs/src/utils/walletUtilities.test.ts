@@ -6,6 +6,8 @@ import {
   fetchZapActivity,
   PAYMENT_FETCH_CAP,
   PAYMENT_PAGE_SIZE,
+  zapActivityQueryOptions,
+  zapActivitySince,
 } from './walletUtilities';
 
 jest.mock('../services/lnbits/payments', () => ({
@@ -53,6 +55,28 @@ const payment = (
   time,
   extra: {},
   wallet_id: walletId,
+});
+
+describe('zap activity query options', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  test('keeps the query key stable while calculating the window at fetch time', () => {
+    const now = Date.now();
+    jest.spyOn(Date, 'now').mockReturnValue(now);
+    const initial = zapActivityQueryOptions(30);
+    const initialSince = zapActivitySince(30);
+    if (initialSince === undefined) {
+      throw new Error('Expected a bounded activity window.');
+    }
+
+    jest.spyOn(Date, 'now').mockReturnValue(now + 60_000);
+    const later = zapActivityQueryOptions(30);
+    const laterSince = zapActivitySince(30);
+
+    expect(later.queryKey).toEqual(initial.queryKey);
+    expect(later.queryKey).toEqual(['zapActivity', 30]);
+    expect(laterSince).toBe(initialSince + 60);
+  });
 });
 
 describe('fetchZapActivity', () => {

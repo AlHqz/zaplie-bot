@@ -28,20 +28,21 @@ export interface VerifiedZapPayments {
   truncated: boolean;
 }
 
+export const zapActivitySince = (periodDays?: number): number | undefined =>
+  periodDays === undefined
+    ? undefined
+    : Math.floor(
+        (Date.now() / 1000 - periodDays * SECONDS_PER_DAY) / 60,
+      ) * 60;
+
 export const zapActivityQueryOptions = (periodDays?: number) => {
-  const sinceSeconds =
-    periodDays === undefined
-      ? undefined
-      : Math.floor(
-          (Date.now() / 1000 - periodDays * SECONDS_PER_DAY) / 60,
-        ) * 60;
   const queryKey =
     periodDays === undefined
       ? (['zapActivity', 'all'] as const)
-      : (['zapActivity', periodDays, sinceSeconds] as const);
+      : (['zapActivity', periodDays] as const);
   return queryOptions({
     queryKey,
-    queryFn: () => fetchZapActivity(sinceSeconds),
+    queryFn: () => fetchZapActivity(zapActivitySince(periodDays)),
     staleTime: ZAP_ACTIVITY_STALE_TIME_MS,
     refetchOnWindowFocus: false,
   });

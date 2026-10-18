@@ -184,6 +184,12 @@
   width: 55%;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .skeletonBlock {
+    animation: none;
+  }
+}
+
 .srOnly {
   position: absolute;
   width: 1px;

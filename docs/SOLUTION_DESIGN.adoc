@@ -169,10 +169,9 @@ Three server-side clients speak to the LNbits REST API:
   `/api/lnbits/*` routes with a verified Entra ID token. Wallet routes resolve
   the wallet through the caller's own LNbits user, so a wallet id on its own
   grants neither reads nor writes. Four reads are deliberately tenant-wide
-  because the product is built on them: the user directory, the wallet list with
-  balances (leaderboard), the aggregate payment feed, and per-wallet payment
-  history, which the team feed and the transaction log read across every
-  teammate.
+  because the product is built on them: the user directory, the wallet list
+  with balances (leaderboard), the aggregate payment feed, and per-wallet
+  payment history, which the transaction log reads across every teammate.
 - `functions/services/lnbitsService.ts` — request-scoped variant; the LNbits
   base URL and credentials arrive with each HTTP request.
 
@@ -346,10 +345,10 @@ per-request via HTTP Basic auth plus `siteURL`/`adminkey` query parameters.
 
 | Transactions / Zaps
 | LNbits payments ledger
-| Queried per wallet for feed, history, and leaderboard. Each zap carries an
-  `extra` object `{ tag: 'zap', from, to }` where `from`/`to` are
-  `{ id, name, user, displayName }` projections of the wallets, never the
-  wallet objects themselves
+| The Feed uses the aggregate payments list; wallet history and the leaderboard
+  query per wallet. Each zap carries an `extra` object
+  `{ tag: 'zap', from, to }` where `from`/`to` are `{ id, name, user,
+  displayName }` projections of the wallets, never the wallet objects themselves
 
 | Reward label ("Sats")
 | `data.json` under `ZAPLIE_DATA_DIR`
