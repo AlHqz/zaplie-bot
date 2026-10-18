@@ -171,7 +171,10 @@ Three server-side clients speak to the LNbits REST API:
   grants neither reads nor writes. Four reads are deliberately tenant-wide
   because the product is built on them: the user directory, the wallet list
   with balances (leaderboard), the aggregate payment feed, and per-wallet
-  payment history, which the transaction log reads across every teammate.
+  payment history, which `WalletTransactionLog` reads through
+  `getWalletTransactionsSince` for the signed-in user's selected wallet. The
+  gateway may permit tenant-wide access to the underlying payment-history
+  route, but the transaction-log UI scopes its request to that selected wallet.
 - `functions/services/lnbitsService.ts` — request-scoped variant; the LNbits
   base URL and credentials arrive with each HTTP request.
 

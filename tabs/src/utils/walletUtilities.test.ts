@@ -60,7 +60,7 @@ const payment = (
 describe('zap activity query options', () => {
   afterEach(() => jest.restoreAllMocks());
 
-  test('keeps the query key stable while calculating the window at fetch time', () => {
+  test('keeps the query key stable while calculating the window at fetch time', async () => {
     const now = Date.now();
     jest.spyOn(Date, 'now').mockReturnValue(now);
     const initial = zapActivityQueryOptions(30);
@@ -69,13 +69,26 @@ describe('zap activity query options', () => {
       throw new Error('Expected a bounded activity window.');
     }
 
+    const page = Array.from({ length: 1_000 }, (_, index) =>
+      payment(`payment-${index}`, `wallet-${index}`, 1, initialSince + 30),
+    );
+    (getUsers as jest.Mock).mockResolvedValue([]);
+    (getAllPayments as jest.Mock).mockResolvedValue(page);
     jest.spyOn(Date, 'now').mockReturnValue(now + 60_000);
-    const later = zapActivityQueryOptions(30);
-    const laterSince = zapActivitySince(30);
 
-    expect(later.queryKey).toEqual(initial.queryKey);
-    expect(later.queryKey).toEqual(['zapActivity', 30]);
-    expect(laterSince).toBe(initialSince + 60);
+    if (!initial.queryFn) {
+      throw new Error('Expected activity query options to include a query function.');
+    }
+    const result = await initial.queryFn({
+      queryKey: initial.queryKey,
+      signal: new AbortController().signal,
+      client: {} as never,
+      meta: undefined,
+    });
+
+    expect(initial.queryKey).toEqual(['zapActivity', 30]);
+    expect(getAllPayments).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ users: [], transfers: [], truncated: false });
   });
 });
 
