@@ -1,7 +1,9 @@
 import React, { act } from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, test } from '@jest/globals';
-import ReceivePayment from './ReceivePayment';
+import ReceivePayment, {
+  PAYMENT_POLL_DELAY_MS,
+} from './ReceivePayment';
 import { createInvoice, getWalletPayments } from '../services/lnbits/payments';
 
 jest.mock('../services/lnbits/payments', () => ({
@@ -54,8 +56,12 @@ describe('ReceivePayment polling lifecycle', () => {
   });
 
   const enterInvoiceDetails = async () => {
-    const amount = container.querySelector('input') as HTMLInputElement;
-    const note = container.querySelector('textarea') as HTMLTextAreaElement;
+    const amount = container.querySelector(
+      '[data-testid="receive-amount"]',
+    ) as HTMLInputElement;
+    const note = container.querySelector(
+      '[data-testid="receive-note"]',
+    ) as HTMLTextAreaElement;
 
     await act(async () => {
       const setAmount = Object.getOwnPropertyDescriptor(
@@ -74,9 +80,11 @@ describe('ReceivePayment polling lifecycle', () => {
     });
 
     await act(async () => {
-      Array.from(container.querySelectorAll('button'))
-        .find(button => button.textContent === 'Next')
-        ?.click();
+      (
+        container.querySelector(
+          '[data-testid="receive-next"]',
+        ) as HTMLButtonElement
+      ).click();
       await Promise.resolve();
       await Promise.resolve();
     });
@@ -102,7 +110,7 @@ describe('ReceivePayment polling lifecycle', () => {
 
     expect(mockCreateInvoice).toHaveBeenCalledTimes(1);
     const paymentCheckTimerIndex = setTimeoutSpy.mock.calls.findIndex(
-      call => call[1] === 5000,
+      call => call[1] === PAYMENT_POLL_DELAY_MS,
     );
     expect(paymentCheckTimerIndex).not.toBe(-1);
     const paymentCheckTimer =
@@ -116,7 +124,7 @@ describe('ReceivePayment polling lifecycle', () => {
     didUnmount = true;
     expect(clearTimeoutSpy).toHaveBeenCalledWith(paymentCheckTimer);
     await act(async () => {
-      jest.advanceTimersByTime(5000);
+      jest.advanceTimersByTime(PAYMENT_POLL_DELAY_MS);
     });
 
     expect(mockGetWalletPayments).not.toHaveBeenCalled();
@@ -154,7 +162,7 @@ describe('ReceivePayment polling lifecycle', () => {
       await Promise.resolve();
     });
     await act(async () => {
-      jest.advanceTimersByTime(5000);
+      jest.advanceTimersByTime(PAYMENT_POLL_DELAY_MS);
     });
 
     expect(mockGetWalletPayments).not.toHaveBeenCalled();
@@ -175,8 +183,8 @@ describe('ReceivePayment polling lifecycle', () => {
     });
     await enterInvoiceDetails();
 
-    const nextButton = Array.from(container.querySelectorAll('button')).find(
-      button => button.textContent === 'Next',
+    const nextButton = container.querySelector(
+      '[data-testid="receive-next"]',
     );
     expect(nextButton).toBeDefined();
     expect(nextButton).toHaveProperty('disabled', true);
@@ -207,7 +215,7 @@ describe('ReceivePayment polling lifecycle', () => {
     await enterInvoiceDetails();
 
     await act(async () => {
-      jest.advanceTimersByTime(15000);
+      jest.advanceTimersByTime(PAYMENT_POLL_DELAY_MS * 3);
     });
     expect(mockGetWalletPayments).toHaveBeenCalledTimes(1);
 
@@ -216,7 +224,7 @@ describe('ReceivePayment polling lifecycle', () => {
       await Promise.resolve();
     });
     await act(async () => {
-      jest.advanceTimersByTime(5000);
+      jest.advanceTimersByTime(PAYMENT_POLL_DELAY_MS);
     });
     expect(mockGetWalletPayments).toHaveBeenCalledTimes(2);
   });
@@ -243,7 +251,7 @@ describe('ReceivePayment polling lifecycle', () => {
     });
     await enterInvoiceDetails();
     await act(async () => {
-      jest.advanceTimersByTime(5000);
+      jest.advanceTimersByTime(PAYMENT_POLL_DELAY_MS);
     });
     expect(mockGetWalletPayments).toHaveBeenCalledTimes(1);
 
@@ -260,12 +268,14 @@ describe('ReceivePayment polling lifecycle', () => {
       await Promise.resolve();
     });
     await act(async () => {
-      jest.advanceTimersByTime(15000);
+      jest.advanceTimersByTime(PAYMENT_POLL_DELAY_MS * 3);
     });
 
     expect(mockGetWalletPayments).toHaveBeenCalledTimes(1);
     expect(
-      setTimeoutSpy.mock.calls.filter(call => call[1] === 5000),
+      setTimeoutSpy.mock.calls.filter(
+        call => call[1] === PAYMENT_POLL_DELAY_MS,
+      ),
     ).toHaveLength(1);
   });
 });

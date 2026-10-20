@@ -7,6 +7,8 @@ import { createInvoice, getWalletPayments } from '../services/lnbits/payments';
 import { getWalletBalance } from '../services/lnbits/wallets';
 import { logger } from '../utils/logger';
 
+export const PAYMENT_POLL_DELAY_MS = 5000;
+
 interface ReceivePopupProps {
   onClose: () => void;
   currentUserLNbitDetails: User;
@@ -35,7 +37,6 @@ const ReceivePayment: React.FC<ReceivePopupProps> = ({
   const myLNbitDetails = currentUserLNbitDetails;
   const [invoice, setInvoice] = useState('');
   const [invoiceError, setInvoiceError] = useState('');
-  const [, setWalletBalance] = useState(0);
   const timeoutId = useRef<number | null>(null);
   const isMounted = useRef(false);
   // The button state only settles on the next render, so the ref is what stops
@@ -107,7 +108,7 @@ const ReceivePayment: React.FC<ReceivePopupProps> = ({
           timeoutId.current = window.setTimeout(() => {
             timeoutId.current = null;
             void checkPayment();
-          }, 5000);
+          }, PAYMENT_POLL_DELAY_MS);
         };
 
         const checkPayment = async () => {
@@ -139,9 +140,8 @@ const ReceivePayment: React.FC<ReceivePopupProps> = ({
 
           logger.debug('Payment received.');
           try {
-            const balance = await getWalletBalance(walletId);
+            await getWalletBalance(walletId);
             if (isMounted.current) {
-              setWalletBalance(balance ?? 0);
               logger.debug('Wallet balance refresh completed.');
             }
           } catch {
@@ -196,6 +196,7 @@ const ReceivePayment: React.FC<ReceivePopupProps> = ({
               onChange={e => setInputValue(e.target.value)}
               className={styles.inputField}
               placeholder="Specify amount"
+              data-testid="receive-amount"
             />
           </div>
         </div>
@@ -205,6 +206,7 @@ const ReceivePayment: React.FC<ReceivePopupProps> = ({
           onChange={e => setInputNotes(e.target.value)}
           className={styles.textarea}
           placeholder=""
+          data-testid="receive-note"
         />
         <p></p>
 
@@ -219,6 +221,7 @@ const ReceivePayment: React.FC<ReceivePopupProps> = ({
                 isSendDisabled ? styles.sendButton : styles.sendButtonEnabled
               }
               disabled={isSendDisabled}
+              data-testid="receive-next"
             >
               Next
             </button>
