@@ -4,7 +4,6 @@ import styles from './SendReceivePayment.module.css';
 import copyDoc from '../images/DocumentCopy.svg';
 import copySuccess from '../images/CheckmarkCircleGreen.svg';
 import { createInvoice, getWalletPayments } from '../services/lnbits/payments';
-import { getWalletBalance } from '../services/lnbits/wallets';
 import { logger } from '../utils/logger';
 
 export const PAYMENT_POLL_DELAY_MS = 5000;
@@ -139,19 +138,6 @@ const ReceivePayment: React.FC<ReceivePopupProps> = ({
           }
 
           logger.debug('Payment received.');
-          try {
-            await getWalletBalance(walletId);
-            if (isMounted.current) {
-              logger.debug('Wallet balance refresh completed.');
-            }
-          } catch {
-            logger.error('Wallet balance refresh failed after payment.');
-            if (isMounted.current) {
-              setInvoiceError(
-                'Payment received, but the balance could not be refreshed.',
-              );
-            }
-          }
         };
 
         schedulePaymentCheck();
